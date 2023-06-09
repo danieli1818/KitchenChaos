@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fa81f5e168e4dd42bfe0c52a87851b7, type: 3}
+  m_Name: Cutting Counter Recipes
+  m_EditorClassIdentifier: 
+  recipes:
+  - {fileID: 11400000, guid: ba40c53c2446c6c498beb695545fc1f0, type: 2}
+  - {fileID: 11400000, guid: 876b7c749451a9448a4c6277dd11cc7d, type: 2}
+  - {fileID: 11400000, guid: c594d0c7b0e54b64f809ae574f6faa7d, type: 2}
