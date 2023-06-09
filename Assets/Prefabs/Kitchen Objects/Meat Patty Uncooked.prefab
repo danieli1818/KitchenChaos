@@ -113,6 +113,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: MeatPattyUncooked_Visual
       objectReference: {fileID: 0}
+    - target: {fileID: 4587374441312730670, guid: 21b2fcdae015b8c4c83ff4b68b31b06f,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 37cc7f3c808f70e469c102680ebc2ace, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 21b2fcdae015b8c4c83ff4b68b31b06f, type: 3}
 --- !u!4 &2296295450439024656 stripped

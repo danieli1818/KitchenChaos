@@ -31,7 +31,7 @@ public abstract class BaseCounter : MonoBehaviour, IInteractable, IKitchenObject
         OnUnSelect?.Invoke(this, EventArgs.Empty);
     }
 
-    public bool SetHeldKitchenObject(KitchenObject kitchenObject) {
+    public virtual bool SetHeldKitchenObject(KitchenObject kitchenObject) {
         if (kitchenObject != null && HasHeldKitchenObject()) {
             Debug.LogError("Trying to set kitchen object while already having one!");
             return false;
@@ -59,7 +59,7 @@ public abstract class BaseCounter : MonoBehaviour, IInteractable, IKitchenObject
         return counterTopPoint;
     }
 
-    public KitchenObject GetKitchenObject() {
+    public virtual KitchenObject GetKitchenObject() {
         return kitchenObject;
     }
 

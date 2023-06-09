@@ -12,6 +12,9 @@ public class DeliveryCounter : BaseCounter
     public event EventHandler OnSuccessfulDelivery;
     public event EventHandler OnIncorrectDelivery;
 
+    [SerializeField] private Transform moveToTransform;
+    [SerializeField] private float fadeTime = 10;
+
     new public static void ResetStaticData() {
         OnAnySuccessfulDelivery = null;
         OnAnyIncorrectDelivery = null;
@@ -27,9 +30,16 @@ public class DeliveryCounter : BaseCounter
                     OnIncorrectDelivery?.Invoke(this, EventArgs.Empty);
                     OnAnyIncorrectDelivery?.Invoke(this, EventArgs.Empty);
                 }
-                plateKitchenObject.DestroySelf();
+                plateKitchenObject.SetKitchenObjectHolder(this);
+                DeliveryCounterKitchenObjectFadeVisual fadeScript = plateKitchenObject.gameObject.AddComponent<DeliveryCounterKitchenObjectFadeVisual>();
+                fadeScript.SetFadeTime(fadeTime);
+                fadeScript.SetMoveToTransform(moveToTransform);
             }
         }
+    }
+
+    public override bool SetHeldKitchenObject(KitchenObject kitchenObject) {
+        return true;
     }
 
 }
