@@ -8,8 +8,19 @@ public class PlateIconsUI : MonoBehaviour
     [SerializeField] private PlateKitchenObject plateKitchenObject;
     [SerializeField] private Transform iconTemplate;
 
+    private CanvasGroup canvasGroup;
+
+    private void Awake() {
+        canvasGroup = GetComponent<CanvasGroup>();
+    }
+
     private void Start() {
         plateKitchenObject.OnIngredientAdded += PlateKitchenObject_OnIngredientAdded;
+        plateKitchenObject.OnFadeEffectProgressChanged += PlateKitchenObject_OnFadeEffectProgressChanged;
+    }
+
+    private void PlateKitchenObject_OnFadeEffectProgressChanged(object sender, PlateKitchenObject.OnFadeEffectProgressChangedEventArgs e) {
+        canvasGroup.alpha = 1 - e.progress;
     }
 
     private void PlateKitchenObject_OnIngredientAdded(object sender, PlateKitchenObject.OnIngredientAddedEventArgs e) {

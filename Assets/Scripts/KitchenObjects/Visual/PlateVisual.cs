@@ -5,6 +5,9 @@ using UnityEngine;
 
 public class PlateVisual : MonoBehaviour
 {
+
+    private const string SHADER_PROGRESS = "_Progress";
+
     [Serializable]
     public struct KitchenObjectSOGameObjectPair {
         public KitchenObjectSO kitchenObjectSO;
@@ -16,6 +19,15 @@ public class PlateVisual : MonoBehaviour
 
     private void Start() {
         plateKitchenObject.OnIngredientAdded += PlateKitchenObject_OnIngredientAdded;
+        plateKitchenObject.OnFadeEffectProgressChanged += PlateKitchenObject_OnFadeEffectProgressChanged;
+    }
+
+    private void PlateKitchenObject_OnFadeEffectProgressChanged(object sender, PlateKitchenObject.OnFadeEffectProgressChangedEventArgs e) {
+        foreach (Renderer renderer in GetComponentsInChildren<Renderer>()) {
+            foreach (Material material in renderer.materials) {
+                material.SetFloat(SHADER_PROGRESS, e.progress);
+            }
+        }
     }
 
     private void PlateKitchenObject_OnIngredientAdded(object sender, PlateKitchenObject.OnIngredientAddedEventArgs e) {

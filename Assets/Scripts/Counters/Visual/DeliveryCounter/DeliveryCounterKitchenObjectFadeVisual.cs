@@ -5,26 +5,23 @@ using UnityEngine;
 public class DeliveryCounterKitchenObjectFadeVisual : MonoBehaviour
 {
 
-    private const string SHADER_PROGRESS = "_Progress";
-
     [SerializeField] private Transform moveToTransform;
     [SerializeField] private float fadeTime;
     private float fadeTimer;
 
+    private PlateKitchenObject plateKitchenObject;
+
     private void Awake() {
         fadeTimer = 0;
+        plateKitchenObject = GetComponent<PlateKitchenObject>();
     }
 
     private void Update() {
         fadeTimer += Time.deltaTime;
-        foreach (Renderer renderer in GetComponentsInChildren<Renderer>()) {
-            foreach (Material material in renderer.materials) {
-                material.SetFloat(SHADER_PROGRESS, fadeTimer / fadeTime);
-            }
-        }
+        plateKitchenObject.SetFadeProgress(fadeTimer / fadeTime);
         transform.position += ((moveToTransform.position - transform.position) / (fadeTime - fadeTimer)) * Time.deltaTime;
         if (fadeTimer >= fadeTime) {
-            gameObject.GetComponent<PlateKitchenObject>().DestroySelf();
+            plateKitchenObject.DestroySelf();
         }
     }
 
