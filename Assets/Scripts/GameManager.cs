@@ -30,6 +30,8 @@ public class GameManager : MonoBehaviour
     private float timer;
     private bool isGamePaused;
 
+    [SerializeField] private bool isDebugMode;
+
     private void Awake() {
         Instance = this;
         state = State.WaitingToStart;
@@ -38,6 +40,11 @@ public class GameManager : MonoBehaviour
     private void Start() {
         InputsHandler.Instance.OnPause += InputsHandler_OnPause;
         InputsHandler.Instance.OnInteract += InputsHandler_OnInteract;
+
+        if (isDebugMode) {
+            ChangeState(State.Countdown);
+            timer = 1f;
+        }
     }
 
     private void InputsHandler_OnInteract(object sender, EventArgs e) {

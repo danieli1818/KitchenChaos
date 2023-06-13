@@ -1,12 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour, IKitchenObjectHolder
+public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
 {
 
-    public static PlayerController Instance { get; private set; }
+    // public static PlayerController Instance { get; private set; }
 
     public static event EventHandler OnAnyPickupKitchenObject;
 
@@ -39,10 +40,7 @@ public class PlayerController : MonoBehaviour, IKitchenObjectHolder
     }
 
     private void Awake() {
-        if (Instance != null) {
-            Debug.LogError("There is more than one player!");
-        }
-        Instance = this;
+        // Instance = this;
         OnSelectionChange += Select;
     }
 
@@ -66,6 +64,10 @@ public class PlayerController : MonoBehaviour, IKitchenObjectHolder
     }
 
     private void Update() {
+        if (!IsOwner) {
+            return;
+        }
+
         HandleMovement();
         HandleInteractions();
     }

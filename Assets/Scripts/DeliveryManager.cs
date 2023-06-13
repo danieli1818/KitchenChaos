@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class DeliveryManager : MonoBehaviour
+public class DeliveryManager : NetworkBehaviour
 {
 
     public static DeliveryManager Instance { get; private set; }
@@ -26,26 +27,55 @@ public class DeliveryManager : MonoBehaviour
     }
 
     private void Update() {
+        if (!IsServer) {
+            return;
+        }
         if (waitingRecipes.Count < maxRecipes) {
             UpdateRecipesSpawnTimer();
             if (recipesSpawnTimer >= recipeSpawnTime) {
-                waitingRecipes.Add(GetRandomRecipe());
-                OnOrderAdded?.Invoke(this, EventArgs.Empty);
+                int recipeIndex = GetRandomRecipeIndex();
+
+                AddWaitingRecipeServerRpc(recipeIndex);
+
                 ResetRecipesSpawnTimer();
             }
         }
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    private void AddWaitingRecipeServerRpc(int waitingRecipeIndex) {
+        AddWaitingRecipeClientRpc(waitingRecipeIndex);
+    }
+
+    [ClientRpc]
+    private void AddWaitingRecipeClientRpc(int waitingRecipeIndex) {
+        waitingRecipes.Add(spawningRecipes.GetRecipes()[waitingRecipeIndex]);
+        OnOrderAdded?.Invoke(this, EventArgs.Empty);
+    }
+
     public bool DeliverDish(PlateKitchenObject plate) {
         List<KitchenObjectSO> plateKitchenObjectSOs = plate.GetKitchenObjectSOsOnPlate();
+        int recipeIndex = 0;
         foreach (DeliveryRecipeSO recipe in waitingRecipes) {
             List<KitchenObjectSO> recipeKitchenObjectSOs = recipe.GetRecipe();
             if (DoKitchenObjectsSOsMatch(plateKitchenObjectSOs, recipeKitchenObjectSOs)) {
-                RemoveWaitingRecipe(recipe);
+                RemoveWaitingRecipeServerRpc(recipeIndex);
                 return true;
             }
+            recipeIndex++;
         }
         return false;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RemoveWaitingRecipeServerRpc(int waitingRecipeIndex) {
+        RemoveWaitingRecipeClientRpc(waitingRecipeIndex);
+    }
+
+    [ClientRpc]
+    private void RemoveWaitingRecipeClientRpc(int waitingRecipeIndex) {
+        DeliveryRecipeSO recipe = waitingRecipes[waitingRecipeIndex];
+        RemoveWaitingRecipe(recipe);
     }
 
     public List<DeliveryRecipeSO> GetWaitingRecipesSOs() {
@@ -55,6 +85,11 @@ public class DeliveryManager : MonoBehaviour
     private DeliveryRecipeSO GetRandomRecipe() {
         List<DeliveryRecipeSO> recipes = spawningRecipes.GetRecipes();
         return recipes[UnityEngine.Random.Range(0, recipes.Count)];
+    }
+
+    private int GetRandomRecipeIndex() {
+        List<DeliveryRecipeSO> recipes = spawningRecipes.GetRecipes();
+        return UnityEngine.Random.Range(0, recipes.Count);
     }
 
     private void UpdateRecipesSpawnTimer() {

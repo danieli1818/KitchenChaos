@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public abstract class BaseCounter : MonoBehaviour, IInteractable, IKitchenObjectHolder
+public abstract class BaseCounter : NetworkBehaviour, IInteractable, IKitchenObjectHolder
 {
 
     public static event EventHandler OnAnyDropKitchenObject;
