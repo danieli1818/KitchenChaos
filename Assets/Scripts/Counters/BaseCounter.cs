@@ -64,5 +64,8 @@ public abstract class BaseCounter : NetworkBehaviour, IInteractable, IKitchenObj
         return kitchenObject;
     }
 
+    public NetworkObject GetNetworkObject() {
+        return GetComponent<NetworkObject>();
+    }
 
 }

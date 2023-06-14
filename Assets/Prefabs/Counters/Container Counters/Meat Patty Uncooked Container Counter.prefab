@@ -13,6 +13,12 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: aa1bacc24dde76e47b2ec0dd4e82385b,
         type: 3}
+    - target: {fileID: 1758947331980026710, guid: 7dc05d8b6582b934888e716e3c440c06,
+        type: 3}
+      propertyPath: kitchenObjectSO
+      value: 
+      objectReference: {fileID: 11400000, guid: 42ff9c50bc1dc9b47ad4ad939c27768c,
+        type: 2}
     - target: {fileID: 2122274258920975786, guid: 7dc05d8b6582b934888e716e3c440c06,
         type: 3}
       propertyPath: kitchenObjectSO
@@ -79,5 +85,29 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4885720311684484097, guid: 7dc05d8b6582b934888e716e3c440c06, type: 3}
+    - {fileID: 5545628269204682170, guid: 7dc05d8b6582b934888e716e3c440c06, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 7dc05d8b6582b934888e716e3c440c06, type: 3}
+--- !u!1 &3138314415687374517 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4110758697474286352, guid: 7dc05d8b6582b934888e716e3c440c06,
+    type: 3}
+  m_PrefabInstance: {fileID: 1333576848856446373}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &-8574280889464591880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3138314415687374517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 951099334
+  AlwaysReplicateAsRoot: 0
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1

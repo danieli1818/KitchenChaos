@@ -173,4 +173,9 @@ public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
     public KitchenObject GetKitchenObject() {
         return heldKitchenObject;
     }
+
+    public NetworkObject GetNetworkObject() {
+        return GetComponent<NetworkObject>();
+    }
+
 }
