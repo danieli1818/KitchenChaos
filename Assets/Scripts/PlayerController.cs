@@ -175,7 +175,7 @@ public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
     }
 
     public NetworkObject GetNetworkObject() {
-        return GetComponent<NetworkObject>();
+        return NetworkObject;
     }
 
 }

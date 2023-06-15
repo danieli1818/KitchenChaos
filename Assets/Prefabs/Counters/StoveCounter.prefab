@@ -225,8 +225,7 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 2110140980025936529, guid: 264537fec105fac4686c927763c61d31, type: 3}
+    m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 264537fec105fac4686c927763c61d31, type: 3}
 --- !u!4 &5443034965884891196 stripped
 Transform:
@@ -255,22 +254,6 @@ MonoBehaviour:
   counterTopPoint: {fileID: 7903909811779198858}
   fryingRecipes: {fileID: 11400000, guid: 30cb5ed7879e83244a9d065436fbccb1, type: 2}
   burningRecipes: {fileID: 11400000, guid: d3519e036864e374eafa08bc1eeec6dc, type: 2}
---- !u!114 &4986986219047494034
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5443034965884891198}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 951099334
-  AlwaysReplicateAsRoot: 0
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
 --- !u!4 &7903909811779198858 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4733472982967208500, guid: 264537fec105fac4686c927763c61d31,

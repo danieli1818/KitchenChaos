@@ -33,7 +33,9 @@ public class KitchenObjectMultiplayerGameObject : NetworkBehaviour
         if (!kitchenObjectHolderNetworkObjectReference.TryGet(out NetworkObject kitchenObjectHolderNetworkObject)) {
             Debug.LogError("Couldn't get Kitchen Object Holder's Network Object from Reference!");
         }
-        kitchenObject.SetKitchenObjectHolder(kitchenObjectHolderNetworkObject.GetComponent<IKitchenObjectHolder>());
+        IKitchenObjectHolder kitchenObjectHolder = kitchenObjectHolderNetworkObject.GetComponent<IKitchenObjectHolder>();
+        Debug.Log("In Spawn, Kitchen Object Holder: " + kitchenObjectHolder + " and its Network Object: " + kitchenObjectHolder.GetNetworkObject());
+        kitchenObject.SetKitchenObjectHolder(kitchenObjectHolder);
     }
 
 }
