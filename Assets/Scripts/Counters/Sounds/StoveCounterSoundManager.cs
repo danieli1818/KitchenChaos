@@ -39,7 +39,7 @@ public class StoveCounterSoundManager : MonoBehaviour
     }
 
     private void Update() {
-        if (stoveCounter.isWarningAlertOn()) {
+        if (stoveCounter.IsWarningAlertOn()) {
             UpdateWarningAlertPlaySoundTimer();
             if (warningAlertPlaySoundTimer < 0) {
                 OnAnyWarningAlertPlaySound?.Invoke(this, new OnAnyWarningAlertPlaySoundEventArgs() {

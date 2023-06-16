@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class CutterCounter : BaseCounter, IHasProgress
@@ -23,10 +24,7 @@ public class CutterCounter : BaseCounter, IHasProgress
         if (HasHeldKitchenObject()) {
             if (!player.HasHeldKitchenObject()) {
                 GetKitchenObject().SetKitchenObjectHolder(player);
-                progress = 0;
-                OnProgressUpdate?.Invoke(this, new IHasProgress.OnProgressUpdateEventArgs {
-                    progress = progress
-                });
+                ResetProgressServerRpc();
             } else {
                 if (GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject)) {
                     if (plateKitchenObject.TryAddIngredient(player.GetKitchenObject().GetKitchenObjectSO())) {
@@ -36,10 +34,7 @@ public class CutterCounter : BaseCounter, IHasProgress
                     if (player.GetKitchenObject().TryGetPlate(out plateKitchenObject)) {
                         if (plateKitchenObject.TryAddIngredient(GetKitchenObject().GetKitchenObjectSO())) {
                             GetKitchenObject().DestroySelf();
-                            progress = 0;
-                            OnProgressUpdate?.Invoke(this, new IHasProgress.OnProgressUpdateEventArgs {
-                                progress = progress
-                            });
+                            ResetProgressServerRpc();
                         }
                     }
                 }
@@ -47,27 +42,27 @@ public class CutterCounter : BaseCounter, IHasProgress
         } else {
             if (player.HasHeldKitchenObject()) {
                 player.GetKitchenObject().SetKitchenObjectHolder(this);
-                progress = 0;
-                OnProgressUpdate?.Invoke(this, new IHasProgress.OnProgressUpdateEventArgs {
-                    progress = progress
-                });
+                ResetProgressServerRpc();
             }
         }
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    private void ResetProgressServerRpc() {
+        ResetProgressClientRpc();
+    }
+
+    [ClientRpc]
+    private void ResetProgressClientRpc() {
+        progress = 0;
+        OnProgressUpdate?.Invoke(this, new IHasProgress.OnProgressUpdateEventArgs {
+            progress = progress
+        });
+    }
+
     public override void InteractAlternate(PlayerController player) {
-        if (HasHeldKitchenObject()) {
-            ProgressRecipeSO recipe = recipes.GetCounterRecipeSO(GetKitchenObject().GetKitchenObjectSO());
-            if (recipe != null) {
-                progress += 1;
-                OnCut?.Invoke(this, EventArgs.Empty);
-                OnAnyCut?.Invoke(this, EventArgs.Empty);
-                CallOnProgressUpdateEvent(recipe.GetMaxProgress());
-                if (progress >= recipe.GetMaxProgress()) {
-                    GetKitchenObject().DestroySelf();
-                    KitchenObject.SpawnKitchenObject(recipe.GetOutput(), this);
-                }
-            }
+        if (HasHeldKitchenObject() && recipes.HasRecipe(GetKitchenObject().GetKitchenObjectSO())) {
+            InteractAlternateLogicServerRpc();
         }
     }
 
@@ -75,6 +70,29 @@ public class CutterCounter : BaseCounter, IHasProgress
         OnProgressUpdate?.Invoke(this, new IHasProgress.OnProgressUpdateEventArgs {
             progress = ((float)progress) / maxProgress
         });
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void InteractAlternateLogicServerRpc() {
+        CutObjectClientRpc();
+        CheckCutDone();
+    }
+
+    [ClientRpc]
+    private void CutObjectClientRpc() {
+        ProgressRecipeSO recipe = recipes.GetCounterRecipeSO(GetKitchenObject().GetKitchenObjectSO());
+        progress += 1;
+        OnCut?.Invoke(this, EventArgs.Empty);
+        OnAnyCut?.Invoke(this, EventArgs.Empty);
+        CallOnProgressUpdateEvent(recipe.GetMaxProgress());
+    }
+
+    private void CheckCutDone() {
+        ProgressRecipeSO recipe = recipes.GetCounterRecipeSO(GetKitchenObject().GetKitchenObjectSO());
+        if (progress >= recipe.GetMaxProgress()) {
+            GetKitchenObject().DestroySelf();
+            KitchenObject.SpawnKitchenObject(recipe.GetOutput(), this);
+        }
     }
 
 }

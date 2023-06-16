@@ -1,19 +1,20 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class StoveCounter : BaseCounter, IHasProgress, IHasWarningAlert
 {
 
-    private State state;
+    private NetworkVariable<State> state = new NetworkVariable<State>(State.Idle);
     [SerializeField] private TimerRecipesSO fryingRecipes;
     [SerializeField] private TimerRecipesSO burningRecipes;
 
     // Timer
-    private float stoveTimer;
+    private NetworkVariable<float> stoveTimer = new NetworkVariable<float>(0f);
 
-    private float recipeTime;
+    private NetworkVariable<float> recipeTime = new NetworkVariable<float>(0f);
 
     private bool isWarningOn;
 
@@ -34,7 +35,6 @@ public class StoveCounter : BaseCounter, IHasProgress, IHasWarningAlert
     }
 
     private void Awake() {
-        state = State.Idle;
         isWarningOn = false;
     }
 
@@ -42,20 +42,48 @@ public class StoveCounter : BaseCounter, IHasProgress, IHasWarningAlert
         ResetStoveTimer();
     }
 
+    public override void OnNetworkSpawn() {
+        state.OnValueChanged += State_OnValueChanged;
+        stoveTimer.OnValueChanged += StoveTimer_OnValueChanged;
+    }
+
+    private void State_OnValueChanged(State prevState, State newState) {
+        if (prevState == State.Burning && isWarningOn) {
+            isWarningOn = false;
+            OnWarningStateChanged?.Invoke(this, new IHasWarningAlert.OnWarningStateChangedEventArgs() {
+                isWarningOn = isWarningOn
+            });
+        }
+        OnStateChanged?.Invoke(this, new OnStateChangedEventArgs() {
+            prevState = prevState,
+            nextState = newState
+        });
+    }
+
+    private void StoveTimer_OnValueChanged(float prevValue, float newValue) {
+        float maxTime = recipeTime.Value != 0 ? recipeTime.Value : 1;
+        OnProgressUpdate?.Invoke(this, new IHasProgress.OnProgressUpdateEventArgs() {
+            progress = stoveTimer.Value / maxTime
+        });
+    }
+
     private void Update() {
+        if (!IsServer) {
+            return;
+        }
         if (HasHeldKitchenObject()) {
-            switch (state) {
+            switch (state.Value) {
                 case State.Frying:
                     UpdateStoveTimer();
-                    if (stoveTimer >= recipeTime) {
+                    if (stoveTimer.Value >= recipeTime.Value) {
                         ChangeKitchenObjectAccordingToRecipe(fryingRecipes.GetCounterRecipeSO(GetKitchenObject().GetKitchenObjectSO()));
                         KitchenObjectSO kitchenObjectSO = GetKitchenObject().GetKitchenObjectSO();
                         if (fryingRecipes.HasRecipe(kitchenObjectSO)) {
-                            recipeTime = fryingRecipes.GetCounterRecipeSO(kitchenObjectSO).GetRecipeTime();
+                            recipeTime.Value = fryingRecipes.GetCounterRecipeSO(kitchenObjectSO).GetRecipeTime();
                             // Keep it in Frying state and initialize the timer
                             ResetStoveTimer();
                         } else if (burningRecipes.HasRecipe(kitchenObjectSO)) {
-                            recipeTime = burningRecipes.GetCounterRecipeSO(kitchenObjectSO).GetRecipeTime();
+                            recipeTime.Value = burningRecipes.GetCounterRecipeSO(kitchenObjectSO).GetRecipeTime();
                             SetState(State.Burning);
                         } else {
                             SetState(State.Idle);
@@ -66,19 +94,16 @@ public class StoveCounter : BaseCounter, IHasProgress, IHasWarningAlert
                     UpdateStoveTimer();
 
                     // Handle warning
-                    if (!isWarningOn && stoveTimer >= (recipeTime / 2.0)) {
-                        isWarningOn = true;
-                        OnWarningStateChanged?.Invoke(this, new IHasWarningAlert.OnWarningStateChangedEventArgs() {
-                            isWarningOn = isWarningOn
-                        });
+                    if (!isWarningOn && stoveTimer.Value >= (recipeTime.Value / 2.0)) {
+                        SetWarningOnServerRpc();
                     }
 
                     // Handle state
-                    if (stoveTimer >= recipeTime) {
+                    if (stoveTimer.Value >= recipeTime.Value) {
                         ChangeKitchenObjectAccordingToRecipe(burningRecipes.GetCounterRecipeSO(GetKitchenObject().GetKitchenObjectSO()));
                         KitchenObjectSO kitchenObjectSO = GetKitchenObject().GetKitchenObjectSO();
                         if (burningRecipes.HasRecipe(kitchenObjectSO)) {
-                            recipeTime = burningRecipes.GetCounterRecipeSO(kitchenObjectSO).GetRecipeTime();
+                            recipeTime.Value = burningRecipes.GetCounterRecipeSO(kitchenObjectSO).GetRecipeTime();
                             // Keep it in Frying state and initialize the timer
                             ResetStoveTimer();
                         } else {
@@ -92,46 +117,59 @@ public class StoveCounter : BaseCounter, IHasProgress, IHasWarningAlert
         }
     }
 
+    [ServerRpc]
+    private void SetWarningOnServerRpc() {
+        SetWarningOnClientRpc();
+    }
+
+    [ClientRpc]
+    private void SetWarningOnClientRpc() {
+        isWarningOn = true;
+        OnWarningStateChanged?.Invoke(this, new IHasWarningAlert.OnWarningStateChangedEventArgs() {
+            isWarningOn = isWarningOn
+        });
+    }
+
     public override void Interact(PlayerController player) {
         if (player.HasHeldKitchenObject()) {
             if (!HasHeldKitchenObject()) {
                 KitchenObject kitchenObject = player.GetKitchenObject();
                 if (fryingRecipes.HasRecipe(kitchenObject.GetKitchenObjectSO())) {
-                    player.GetKitchenObject().SetKitchenObjectHolder(this);
-                    recipeTime = fryingRecipes.GetCounterRecipeSO(kitchenObject.GetKitchenObjectSO()).GetRecipeTime();
-                    SetState(State.Frying);
+                    kitchenObject.SetKitchenObjectHolder(this);
+                    PlaceKitchenObjectServerRpc(KitchenObjectMultiplayerGameObject.Instance.GetKitchenObjectSOIndex(kitchenObject.GetKitchenObjectSO()));
                 }
             } else {
                 if (player.GetKitchenObject().TryGetPlate(out PlateKitchenObject plateKitchenObject)) {
                     if (plateKitchenObject.TryAddIngredient(GetKitchenObject().GetKitchenObjectSO())) {
                         GetKitchenObject().DestroySelf();
-                        SetState(State.Idle);
+                        SetStateServerRpc(State.Idle);
                     }
                 }
             }
         } else {
             if (HasHeldKitchenObject()) {
                 GetKitchenObject().SetKitchenObjectHolder(player);
-                recipeTime = 0f;
-                SetState(State.Idle);
+                // recipeTime = 0f;
+                SetStateServerRpc(State.Idle);
             }
         }
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    private void PlaceKitchenObjectServerRpc(int kitchenObjectSOIndex) {
+        recipeTime.Value = fryingRecipes.GetCounterRecipeSO(KitchenObjectMultiplayerGameObject.Instance.GetKitchenObjectSO(kitchenObjectSOIndex)).GetRecipeTime();
+        SetState(State.Frying);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetStateServerRpc(State state) {
+        SetState(state);
+    }
+
+    // Server only
     private void SetState(State state) {
-        State prevState = this.state;
-        this.state = state;
+        this.state.Value = state;
         ResetStoveTimer();
-        if (prevState == State.Burning && isWarningOn) {
-            isWarningOn = false;
-            OnWarningStateChanged?.Invoke(this, new IHasWarningAlert.OnWarningStateChangedEventArgs() {
-                isWarningOn = isWarningOn
-            });
-        }
-        OnStateChanged?.Invoke(this, new OnStateChangedEventArgs() {
-            prevState = prevState,
-            nextState = state
-        });
     }
 
     private bool ChangeKitchenObjectAccordingToRecipe(TimerRecipeSO recipe) {
@@ -147,20 +185,17 @@ public class StoveCounter : BaseCounter, IHasProgress, IHasWarningAlert
     }
 
     private void UpdateStoveTimer() {
-        stoveTimer += Time.deltaTime;
-        OnProgressUpdate?.Invoke(this, new IHasProgress.OnProgressUpdateEventArgs() {
-            progress = stoveTimer / recipeTime
-        });
+        stoveTimer.Value += Time.deltaTime;
     }
 
     private void ResetStoveTimer() {
-        stoveTimer = 0f;
+        stoveTimer.Value = 0f;
         OnProgressUpdate?.Invoke(this, new IHasProgress.OnProgressUpdateEventArgs() {
             progress = 0f
         });
     }
 
-    public bool isWarningAlertOn() {
+    public bool IsWarningAlertOn() {
         return isWarningOn;
     }
 

@@ -18,12 +18,12 @@ public class KitchenObjectMultiplayerGameObject : NetworkBehaviour
     }
 
     public void SpawnKitchenObject(KitchenObjectSO kitchenObjectSO, IKitchenObjectHolder holder) {
-        SpawnKitchenObjectServerRpc(kitchenObjectsListSO.GetKitchenObjectSOIndex(kitchenObjectSO), holder.GetNetworkObject());
+        SpawnKitchenObjectServerRpc(GetKitchenObjectSOIndex(kitchenObjectSO), holder.GetNetworkObject());
     }
 
     [ServerRpc(RequireOwnership = false)]
     private void SpawnKitchenObjectServerRpc(int kitchenObjectSOIndex, NetworkObjectReference kitchenObjectHolderNetworkObjectReference) {
-        Transform kitchenObjectTransform = Instantiate(kitchenObjectsListSO.GetKitchenObjectSO(kitchenObjectSOIndex).GetPrefab());
+        Transform kitchenObjectTransform = Instantiate(GetKitchenObjectSO(kitchenObjectSOIndex).GetPrefab());
 
         NetworkObject kitchenObjectNetworkObject = kitchenObjectTransform.GetComponent<NetworkObject>();
         kitchenObjectNetworkObject.Spawn(true);
@@ -36,6 +36,36 @@ public class KitchenObjectMultiplayerGameObject : NetworkBehaviour
         IKitchenObjectHolder kitchenObjectHolder = kitchenObjectHolderNetworkObject.GetComponent<IKitchenObjectHolder>();
         Debug.Log("In Spawn, Kitchen Object Holder: " + kitchenObjectHolder + " and its Network Object: " + kitchenObjectHolder.GetNetworkObject());
         kitchenObject.SetKitchenObjectHolder(kitchenObjectHolder);
+    }
+
+    public void DestroyKitchenObject(KitchenObject kitchenObject) {
+        DestroyKitchenObjectServerRpc(kitchenObject.NetworkObject);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void DestroyKitchenObjectServerRpc(NetworkObjectReference kitchenObjectNetworkObjectReference) {
+        ClearKitchenObjectFromHolderClientRpc(kitchenObjectNetworkObjectReference);
+        if (!kitchenObjectNetworkObjectReference.TryGet(out NetworkObject kitchenObjectNetworkObject)) {
+            Debug.Log("Couldn't get the Kitchen Object's Network Object from its reference!");
+        }
+        kitchenObjectNetworkObject.Despawn();
+    }
+
+    [ClientRpc]
+    private void ClearKitchenObjectFromHolderClientRpc(NetworkObjectReference kitchenObjectNetworkObjectReference) {
+        if (!kitchenObjectNetworkObjectReference.TryGet(out NetworkObject kitchenObjectNetworkObject)) {
+            Debug.Log("Couldn't get the Kitchen Object's Network Object from its reference!");
+        }
+        KitchenObject kitchenObject = kitchenObjectNetworkObject.GetComponent<KitchenObject>();
+        kitchenObject.ClearKitchenObjectFromHolder();
+    }
+
+    public KitchenObjectSO GetKitchenObjectSO(int index) {
+        return kitchenObjectsListSO.GetKitchenObjectSO(index);
+    }
+
+    public int GetKitchenObjectSOIndex(KitchenObjectSO kitchenObjectSO) {
+        return kitchenObjectsListSO.GetKitchenObjectSOIndex(kitchenObjectSO);
     }
 
 }
