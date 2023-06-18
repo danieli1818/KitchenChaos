@@ -20,14 +20,11 @@ public class PlatesCounter : BaseCounter
 
     private void Awake() {
         platesCounter = 0;
-    }
-
-    private void Start() {
-        platesSpawnTimer = 0f;
+        platesSpawnTimer = platesSpawnTime;
     }
 
     private void Update() {
-        if (!IsServer) {
+        if (!IsServer || !GameManager.Instance.IsGamePlaying()) {
             return;
         }
 

@@ -72,4 +72,12 @@ public class KitchenObject : NetworkBehaviour
         KitchenObjectMultiplayerGameObject.Instance.SpawnKitchenObject(kitchenObjectSO, holder);
     }
 
+    protected FollowTransform GetFollowTransform() {
+        return followTransform;
+    }
+
+    public void ClearFollowTransform() {
+        followTransform.SetFollowTransform(null);
+    }
+
 }

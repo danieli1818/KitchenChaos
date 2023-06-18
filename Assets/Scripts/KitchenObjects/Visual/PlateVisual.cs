@@ -15,14 +15,15 @@ public class PlateVisual : MonoBehaviour
     }
 
     [SerializeField] private PlateKitchenObject plateKitchenObject;
+    [SerializeField] private FadeEffect plateKitchenObjectFadeEffect;
     [SerializeField] private List<KitchenObjectSOGameObjectPair> kitchenObjectSOGameObjectPairs;
 
     private void Start() {
         plateKitchenObject.OnIngredientAdded += PlateKitchenObject_OnIngredientAdded;
-        plateKitchenObject.OnFadeEffectProgressChanged += PlateKitchenObject_OnFadeEffectProgressChanged;
+        plateKitchenObjectFadeEffect.OnFadeEffectProgressChanged += PlateKitchenObject_OnFadeEffectProgressChanged;
     }
 
-    private void PlateKitchenObject_OnFadeEffectProgressChanged(object sender, PlateKitchenObject.OnFadeEffectProgressChangedEventArgs e) {
+    private void PlateKitchenObject_OnFadeEffectProgressChanged(object sender, FadeEffect.OnFadeEffectProgressChangedEventArgs e) {
         foreach (Renderer renderer in GetComponentsInChildren<Renderer>()) {
             foreach (Material material in renderer.materials) {
                 material.SetFloat(SHADER_PROGRESS, e.progress);

@@ -30,11 +30,27 @@ public class DeliveryCounter : BaseCounter
                     NotifyIncorrectDeliveryServerRpc();
                 }
                 plateKitchenObject.SetKitchenObjectHolder(this);
-                DeliveryCounterKitchenObjectFadeVisual fadeScript = plateKitchenObject.gameObject.AddComponent<DeliveryCounterKitchenObjectFadeVisual>();
-                fadeScript.SetFadeTime(fadeTime);
-                fadeScript.SetMoveToTransform(moveToTransform);
+                FadePlateKitchenObjectServerRpc(plateKitchenObject.NetworkObject);
             }
         }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void FadePlateKitchenObjectServerRpc(NetworkObjectReference plateKitchenObjectNetworkObjectReference) {
+        FadePlateKitchenObjectClientRpc(plateKitchenObjectNetworkObjectReference);
+    }
+
+    [ClientRpc]
+    private void FadePlateKitchenObjectClientRpc(NetworkObjectReference plateKitchenObjectNetworkObjectReference) {
+        if (!plateKitchenObjectNetworkObjectReference.TryGet(out NetworkObject plateKitchenObjectNetworkObject)) {
+            Debug.Log("Couldn't get network object of plate kitchen object from reference!");
+        }
+        PlateKitchenObject plateKitchenObject = plateKitchenObjectNetworkObject.GetComponent<PlateKitchenObject>();
+        plateKitchenObject.ClearFollowTransform();
+        FadeEffect fadeEffect = plateKitchenObjectNetworkObject.GetComponent<FadeEffect>();
+        fadeEffect.SetFadeTime(fadeTime);
+        fadeEffect.SetMoveToTransform(moveToTransform);
+        fadeEffect.StartFadeEffect();
     }
 
     [ServerRpc(RequireOwnership = false)]

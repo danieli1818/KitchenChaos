@@ -1,18 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlateKitchenObject : KitchenObject
+public class PlateKitchenObject : KitchenObject, IHasFadeEffect
 {
 
     public event EventHandler<OnIngredientAddedEventArgs> OnIngredientAdded;
-    public event EventHandler<OnFadeEffectProgressChangedEventArgs> OnFadeEffectProgressChanged;
     public class OnIngredientAddedEventArgs : EventArgs {
         public KitchenObjectSO ingredientKitchenObjectSO;
-    }
-    public class OnFadeEffectProgressChangedEventArgs : EventArgs {
-        public float progress;
     }
 
     [SerializeField] private List<KitchenObjectSO> validKitchenObjectSOs;
@@ -27,25 +24,26 @@ public class PlateKitchenObject : KitchenObject
         if (!validKitchenObjectSOs.Contains(kitchenObjectSO) ||  kitchenObjectSOs.Contains(kitchenObjectSO)) {
             return false;
         }
+        AddIngredientServerRpc(KitchenObjectMultiplayerGameObject.Instance.GetKitchenObjectSOIndex(kitchenObjectSO));
+        return true;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void AddIngredientServerRpc(int kitchenObjectSOIndex) {
+        AddIngredientClientRpc(kitchenObjectSOIndex);
+    }
+
+    [ClientRpc]
+    private void AddIngredientClientRpc(int kitchenObjectSOIndex) {
+        KitchenObjectSO kitchenObjectSO = KitchenObjectMultiplayerGameObject.Instance.GetKitchenObjectSO(kitchenObjectSOIndex);
         kitchenObjectSOs.Add(kitchenObjectSO);
         OnIngredientAdded?.Invoke(this, new OnIngredientAddedEventArgs() {
             ingredientKitchenObjectSO = kitchenObjectSO
         });
-        return true;
     }
 
     public List<KitchenObjectSO> GetKitchenObjectSOsOnPlate() {
         return kitchenObjectSOs;
-    }
-
-    public bool SetFadeProgress(float progress) {
-        if (progress < 0 || progress > 1) {
-            return false;
-        }
-        OnFadeEffectProgressChanged?.Invoke(this, new OnFadeEffectProgressChangedEventArgs() {
-            progress = progress
-        });
-        return true;
     }
 
 }

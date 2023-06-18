@@ -7,13 +7,16 @@ using UnityEngine;
 public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
 {
 
-    // public static PlayerController Instance { get; private set; }
+    public static PlayerController LocalInstance { get; private set; }
 
     public static event EventHandler OnAnyPickupKitchenObject;
+    public static event EventHandler OnAnyPlayerSpawned;
 
     [SerializeField] private float velocity = 7f;
     [SerializeField] private LayerMask interactionsLayerMask;
+    [SerializeField] private LayerMask collisionsLayerMask;
     [SerializeField] private Transform holdingPoint;
+    [SerializeField] private List<Vector3> spawningPoints;
 
     public event EventHandler<OnSelectionChangeEventArgs> OnSelectionChange;
 
@@ -31,12 +34,13 @@ public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
 
     public static void ResetStaticData() {
         OnAnyPickupKitchenObject = null;
+        OnAnyPlayerSpawned = null;
     }
 
     private bool CanMove(Vector3 moveDir, float distance) {
         float playerRadius = 0.7f;
-        float playerHeight = 2f;
-        return !Physics.CapsuleCast(transform.position, transform.position + Vector3.up * playerHeight, playerRadius, moveDir, distance);
+        // float playerHeight = 2f;
+        return !Physics.BoxCast(transform.position, Vector3.one * playerRadius, moveDir, Quaternion.identity, distance, collisionsLayerMask);
     }
 
     private void Awake() {
@@ -47,6 +51,15 @@ public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
     private void Start() {
         InputsHandler.Instance.OnInteract += InputsHandler_OnInteract;
         InputsHandler.Instance.OnInteractAlternate += InputsHandler_OnInteractAlternate;
+    }
+
+    public override void OnNetworkSpawn() {
+        if (IsOwner) {
+            LocalInstance = this;
+        }
+
+        transform.position = spawningPoints[(int)OwnerClientId];
+        OnAnyPlayerSpawned?.Invoke(this, EventArgs.Empty);
     }
 
     private void InputsHandler_OnInteractAlternate(object sender, EventArgs e) {

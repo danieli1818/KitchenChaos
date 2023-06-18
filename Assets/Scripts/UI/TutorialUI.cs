@@ -22,14 +22,14 @@ public class TutorialUI : MonoBehaviour
 
     private void Start() {
         InputsHandler.Instance.OnReboundBinding += InputsHandler_OnReboundBinding;
-        GameManager.Instance.OnStateChanged += GameManager_OnStateChanged;
+        GameManager.Instance.OnLocalPlayerReadyChanged += GameManager_OnLocalPlayerReadyChanged;
 
         UpdateVisual();
 
         Show();
     }
 
-    private void GameManager_OnStateChanged(object sender, GameManager.OnStateChangedEventArgs e) {
+    private void GameManager_OnLocalPlayerReadyChanged(object sender, GameManager.OnLocalPlayerReadyChangedEventArgs e) {
         Hide();
     }
 

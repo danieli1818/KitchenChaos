@@ -23,11 +23,12 @@ public class DeliveryManager : NetworkBehaviour
     private void Awake() {
         Instance = this;
         waitingRecipes = new List<DeliveryRecipeSO>();
-        ResetRecipesSpawnTimer();
+        recipesSpawnTimer = recipeSpawnTime;
+        // ResetRecipesSpawnTimer();
     }
 
     private void Update() {
-        if (!IsServer) {
+        if (!IsServer || !GameManager.Instance.IsGamePlaying()) {
             return;
         }
         if (waitingRecipes.Count < maxRecipes) {

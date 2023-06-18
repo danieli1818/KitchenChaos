@@ -142,6 +142,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   plateKitchenObject: {fileID: 8272029355701831092}
+  plateKitchenObjectFadeEffect: {fileID: 2772396551424820597}
   iconTemplate: {fileID: 6164813474715134596}
 --- !u!114 &8124705952227080841
 MonoBehaviour:
@@ -180,6 +181,7 @@ GameObject:
   - component: {fileID: 8272029355701831092}
   - component: {fileID: 4354163239361618313}
   - component: {fileID: 3120211671609903897}
+  - component: {fileID: 2772396551424820597}
   m_Layer: 0
   m_Name: Plate
   m_TagString: Untagged
@@ -252,6 +254,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 736d87d7276afa341b06a5db85d3b59b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2772396551424820597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2242499818441419575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1cba6c4aa3d7004c82e428744a7e46f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveToTransform: {fileID: 0}
+  fadeTime: 0
 --- !u!1 &4721567291813159904
 GameObject:
   m_ObjectHideFlags: 0
@@ -556,6 +572,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   plateKitchenObject: {fileID: 8272029355701831092}
+  plateKitchenObjectFadeEffect: {fileID: 2772396551424820597}
   kitchenObjectSOGameObjectPairs:
   - kitchenObjectSO: {fileID: 11400000, guid: 277a222ccb313ac40b3fc5ab29b36664, type: 2}
     gameObject: {fileID: 62520771039205012}
