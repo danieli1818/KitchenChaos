@@ -61,7 +61,7 @@ public class OptionsUI : MonoBehaviour
 
         closeButton.onClick.AddListener(Hide);
 
-        GameManager.Instance.OnGameUnpaused += GameManager_OnGameUnpaused;
+        GameManager.Instance.OnLocalGameUnpaused += GameManager_OnGameUnpaused;
 
         moveUpButton.onClick.AddListener(() => {
             RebindBinding(InputsHandler.Binding.MoveUp, moveUpButtonText);
