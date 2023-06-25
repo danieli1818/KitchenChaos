@@ -55,9 +55,22 @@ public class GameManager : NetworkBehaviour
         InputsHandler.Instance.OnInteract += InputsHandler_OnInteract;
     }
 
+    private void NetworkManager_OnClientDisconnectServerCallback(ulong clientId) {
+        if (playersPauseState.ContainsKey(clientId)) {
+            playersPauseState.Remove(clientId);
+        }
+        if (isGamePaused.Value && !IsAnyPlayerPaused()) {
+            isGamePaused.Value = false;
+        }
+    }
+
     public override void OnNetworkSpawn() {
         state.OnValueChanged += State_OnValueChanged;
         isGamePaused.OnValueChanged += IsGamePause_OnValueChanged;
+
+        if (IsServer) {
+            NetworkManager.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectServerCallback;
+        }
     }
 
     private void IsGamePause_OnValueChanged(bool previousValue, bool newValue) {

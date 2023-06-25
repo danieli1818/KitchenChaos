@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,6 +24,7 @@ public class PauseUI : MonoBehaviour
         });
         mainMenuButton.onClick.AddListener(() => {
             GameManager.Instance.TogglePause();
+            NetworkManager.Singleton.Shutdown();
             SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
         });
 
