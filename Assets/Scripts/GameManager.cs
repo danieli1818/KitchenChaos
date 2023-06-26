@@ -146,6 +146,10 @@ public class GameManager : NetworkBehaviour
         return state.Value == State.Countdown;
     }
 
+    public bool IsWaitingToStart() {
+        return state.Value == State.WaitingToStart;
+    }
+
     public float GetNormalizedPlayingTimer() {
         return 1 - (timer.Value / gamePlayingTime);
     }

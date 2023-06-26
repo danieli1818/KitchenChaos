@@ -11,7 +11,7 @@ public class HostDisconnectedUI : MonoBehaviour
 
     private void Start() {
         playAgainButton.onClick.AddListener(() => {
-            NetworkManager.Singleton.Shutdown();
+            MultiplayerManager.Instance.ShutdownAndDestroyNetworkManager();
             SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
         });
         NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;

@@ -24,7 +24,7 @@ public class PauseUI : MonoBehaviour
         });
         mainMenuButton.onClick.AddListener(() => {
             GameManager.Instance.TogglePause();
-            NetworkManager.Singleton.Shutdown();
+            MultiplayerManager.Instance.ShutdownAndDestroyNetworkManager();
             SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
         });
 
