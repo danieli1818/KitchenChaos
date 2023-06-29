@@ -15,7 +15,7 @@ public class GameOverUI : MonoBehaviour
         GameManager.Instance.OnStateChanged += GameManager_OnStateChanged;
         playAgainButton.onClick.AddListener(() => {
             MultiplayerManager.Instance.ShutdownAndDestroyNetworkManager();
-            SceneLoader.LoadScene(SceneLoader.Scene.GameScene);
+            SceneLoader.LoadScene(SceneLoader.Scene.LobbyScene);
         });
 
         HideGameOverUI();

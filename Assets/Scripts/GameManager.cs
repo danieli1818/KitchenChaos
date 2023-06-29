@@ -21,14 +21,14 @@ public class GameManager : NetworkBehaviour
         public State prevState;
         public State newState;
     }
-    public event EventHandler OnLocalGamePaused;
-    public event EventHandler OnLocalGameUnpaused;
-    public event EventHandler OnGamePaused;
-    public event EventHandler OnGameUnpaused;
     public event EventHandler<OnLocalPlayerReadyChangedEventArgs> OnLocalPlayerReadyChanged;
     public class OnLocalPlayerReadyChangedEventArgs : EventArgs {
         public bool isReady;
     }
+    public event EventHandler OnLocalGamePaused;
+    public event EventHandler OnLocalGameUnpaused;
+    public event EventHandler OnGamePaused;
+    public event EventHandler OnGameUnpaused;
 
     [SerializeField] private float countdownTime;
     [SerializeField] private float gamePlayingTime;
@@ -36,16 +36,17 @@ public class GameManager : NetworkBehaviour
     private readonly NetworkVariable<State> state = new(State.WaitingToStart);
     private readonly NetworkVariable<float> timer = new(0f);
     private readonly NetworkVariable<bool> isGamePaused = new(false);
+    private bool isLocalPlayerReady;
     private bool isLocalGamePaused;
-    private bool isPlayerReady;
     private Dictionary<ulong, bool> playersReadyState;
     private Dictionary<ulong, bool> playersPauseState;
 
     [SerializeField] private bool isDebugMode;
+    [SerializeField] private Transform playerPrefabTransform;
 
     private void Awake() {
         Instance = this;
-        isPlayerReady = false;
+        isLocalPlayerReady = false;
         playersReadyState = new Dictionary<ulong, bool>();
         playersPauseState = new Dictionary<ulong, bool>();
     }
@@ -53,6 +54,38 @@ public class GameManager : NetworkBehaviour
     private void Start() {
         InputsHandler.Instance.OnPause += InputsHandler_OnPause;
         InputsHandler.Instance.OnInteract += InputsHandler_OnInteract;
+    }
+
+    private void InputsHandler_OnInteract(object sender, EventArgs e) {
+        if (IsWaitingToStart() && !isLocalPlayerReady) {
+            SetIsLocalPlayerReady(true);
+        }
+    }
+
+    private void SetIsLocalPlayerReady(bool isLocalPlayerReady) {
+        this.isLocalPlayerReady = isLocalPlayerReady;
+        OnLocalPlayerReadyChanged?.Invoke(this, new OnLocalPlayerReadyChangedEventArgs() {
+            isReady = isLocalPlayerReady
+        });
+        OnPlayerReadyServerRpc();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void OnPlayerReadyServerRpc(ServerRpcParams serverRpcParams = default) {
+        playersReadyState[serverRpcParams.Receive.SenderClientId] = true;
+        if (IsWaitingToStart() && AreAllPlayersReady()) {
+            ChangeState(State.Countdown);
+            timer.Value = countdownTime;
+        }
+    }
+
+    private bool AreAllPlayersReady() {
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds) {
+            if (!playersReadyState.ContainsKey(clientId) || !playersReadyState[clientId]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void NetworkManager_OnClientDisconnectServerCallback(ulong clientId) {
@@ -70,6 +103,14 @@ public class GameManager : NetworkBehaviour
 
         if (IsServer) {
             NetworkManager.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectServerCallback;
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += NetworkManagerSceneManager_OnLoadEventCompleted;
+        }
+    }
+
+    private void NetworkManagerSceneManager_OnLoadEventCompleted(string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut) {
+        foreach (ulong clientId in NetworkManager.ConnectedClientsIds) {
+            Transform playerTransform = Instantiate(playerPrefabTransform);
+            playerTransform.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
         }
     }
 
@@ -88,12 +129,6 @@ public class GameManager : NetworkBehaviour
             prevState = prevState,
             newState = newState
         });
-    }
-
-    private void InputsHandler_OnInteract(object sender, EventArgs e) {
-        if (state.Value == State.WaitingToStart) {
-            SetIsLocalPlayerReady(true);
-        }
     }
 
     private void InputsHandler_OnPause(object sender, EventArgs e) {
@@ -199,28 +234,11 @@ public class GameManager : NetworkBehaviour
         return false;
     }
 
-    private void SetIsLocalPlayerReady(bool isReady) {
-        if (isPlayerReady == isReady) {
-            return;
+    public override void OnDestroy() {
+        base.OnDestroy();
+        if (isGamePaused.Value) {
+            Time.timeScale = 1f;
         }
-        isPlayerReady = isReady;
-        OnLocalPlayerReadyChanged?.Invoke(this, new OnLocalPlayerReadyChangedEventArgs() {
-            isReady = isPlayerReady
-        });
-        SetPlayerReadyServerRpc(isPlayerReady);
-    }
-
-    [ServerRpc(RequireOwnership = false)]
-    private void SetPlayerReadyServerRpc(bool isReady, ServerRpcParams serverRpcParams = default) {
-        playersReadyState[serverRpcParams.Receive.SenderClientId] = isReady;
-
-        foreach (ulong clientId in NetworkManager.ConnectedClientsIds) {
-            if (!playersReadyState.ContainsKey(clientId) || !playersReadyState[clientId]) {
-                return;
-            }
-        }
-        ChangeState(State.Countdown);
-        timer.Value = countdownTime;
     }
 
 }

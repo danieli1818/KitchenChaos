@@ -12,12 +12,12 @@ public class WaitingForPlayersUI : MonoBehaviour
         Hide();
     }
 
-    private void GameManager_OnStateChanged(object sender, GameManager.OnStateChangedEventArgs e) {
-        Hide();
-    }
-
     private void GameManager_OnLocalPlayerReadyChanged(object sender, GameManager.OnLocalPlayerReadyChangedEventArgs e) {
         Show();
+    }
+
+    private void GameManager_OnStateChanged(object sender, GameManager.OnStateChangedEventArgs e) {
+        Hide();
     }
 
     private void Show() {

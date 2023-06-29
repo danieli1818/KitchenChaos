@@ -102,6 +102,8 @@ public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
     }
 
     private void HandleMovement() {
+        Debug.Log("Handling Player Movement!");
+
         Vector2 inputVectorNormalized = InputsHandler.Instance.GetInputVectorNormalized();
 
         Vector3 moveDir = new(inputVectorNormalized.x, 0f, inputVectorNormalized.y);
@@ -122,6 +124,9 @@ public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
             }
         }
 
+        Debug.Log("CanMove: " + canMove);
+        Debug.Log("MoveDir: " + moveDir);
+        Debug.Log("Time.deltaTime: " + Time.deltaTime);
         if (canMove) {
             // Walk
             transform.position += distance * moveDir;

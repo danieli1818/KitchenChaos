@@ -21,8 +21,8 @@ public class TutorialUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI gamepadPauseKeyText;
 
     private void Start() {
-        InputsHandler.Instance.OnReboundBinding += InputsHandler_OnReboundBinding;
         GameManager.Instance.OnLocalPlayerReadyChanged += GameManager_OnLocalPlayerReadyChanged;
+        InputsHandler.Instance.OnReboundBinding += InputsHandler_OnReboundBinding;
 
         UpdateVisual();
 
