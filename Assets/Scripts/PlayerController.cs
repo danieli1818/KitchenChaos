@@ -17,6 +17,7 @@ public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
     [SerializeField] private LayerMask collisionsLayerMask;
     [SerializeField] private Transform holdingPoint;
     [SerializeField] private List<Vector3> spawningPoints;
+    [SerializeField] private PlayerVisual playerVisual;
 
     public event EventHandler<OnSelectionChangeEventArgs> OnSelectionChange;
 
@@ -51,6 +52,7 @@ public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
     private void Start() {
         InputsHandler.Instance.OnInteract += InputsHandler_OnInteract;
         InputsHandler.Instance.OnInteractAlternate += InputsHandler_OnInteractAlternate;
+        playerVisual.SetPlayerColor(MultiplayerManager.Instance.GetColorByIndex(MultiplayerManager.Instance.GetPlayerDataFromClientId(OwnerClientId).colorIndex));
     }
 
     public override void OnNetworkSpawn() {
@@ -58,7 +60,7 @@ public class PlayerController : NetworkBehaviour, IKitchenObjectHolder
             LocalInstance = this;
         }
 
-        transform.position = spawningPoints[(int)OwnerClientId];
+        transform.position = spawningPoints[MultiplayerManager.Instance.GetPlayerIndexFromClientId(OwnerClientId)];
         OnAnyPlayerSpawned?.Invoke(this, EventArgs.Empty);
 
         if (IsServer) {

@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class ReadyUI : MonoBehaviour
 {
 
+    [SerializeField] private Button mainMenuButton;
     [SerializeField] private Button readyButton;
     [SerializeField] private TextMeshProUGUI readyButtonText;
     [SerializeField] private Color readyButtonColor;
@@ -14,6 +15,10 @@ public class ReadyUI : MonoBehaviour
 
     private void Start() {
         PlayerReadyStatusManager.Instance.OnLocalPlayerReadyChanged += PlayerReadyStatusManager_OnLocalPlayerReadyChanged;
+        mainMenuButton.onClick.AddListener(() => {
+            MultiplayerManager.Instance.ShutdownAndDestroyNetworkManager();
+            SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
+        });
         readyButton.onClick.AddListener(() => {
             PlayerReadyStatusManager.Instance.TogglePlayerReadyState();
         });

@@ -9,6 +9,11 @@ public class PlayerReadyStatusManager : NetworkBehaviour
 
     public static PlayerReadyStatusManager Instance { get; private set; }
 
+    public event EventHandler<OnPlayerReadyChangedEventArgs> OnPlayerReadyChanged;
+    public class OnPlayerReadyChangedEventArgs : EventArgs {
+        public ulong clientId;
+        public bool isReady;
+    }
     public event EventHandler<OnLocalPlayerReadyChangedEventArgs> OnLocalPlayerReadyChanged;
     public class OnLocalPlayerReadyChangedEventArgs : EventArgs {
         public bool isReady;
@@ -42,6 +47,7 @@ public class PlayerReadyStatusManager : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     private void SetPlayerReadyServerRpc(bool isReady, ServerRpcParams serverRpcParams = default) {
         playersReadyState[serverRpcParams.Receive.SenderClientId] = isReady;
+        OnPlayerReadyChangedClientRpc(serverRpcParams.Receive.SenderClientId, isReady);
         Debug.Log("ClientId: " + serverRpcParams.Receive.SenderClientId + " is now " + (isReady ? "" : "not") + " ready!");
 
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds) {
@@ -51,6 +57,15 @@ public class PlayerReadyStatusManager : NetworkBehaviour
             }
         }
         StartGame();
+    }
+
+    [ClientRpc]
+    private void OnPlayerReadyChangedClientRpc(ulong clientId, bool isReady) {
+        playersReadyState[clientId] = isReady;
+        OnPlayerReadyChanged?.Invoke(this, new OnPlayerReadyChangedEventArgs() {
+            clientId = clientId,
+            isReady = isReady
+        });
     }
 
     public bool TogglePlayerReadyState() {
@@ -65,6 +80,14 @@ public class PlayerReadyStatusManager : NetworkBehaviour
 
     public bool IsLocalPlayerReady() {
         return isPlayerReady;
+    }
+
+    public bool IsPlayerReady(ulong clientId) {
+        return playersReadyState.ContainsKey(clientId) && playersReadyState[clientId];
+    }
+
+    public void SetPlayerColor(int colorIndex) {
+
     }
 
 }

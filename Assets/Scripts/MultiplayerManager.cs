@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-public class MultiplayerManager : MonoBehaviour
+public class MultiplayerManager : NetworkBehaviour
 {
     
     public static MultiplayerManager Instance { get; private set; }
@@ -12,6 +12,13 @@ public class MultiplayerManager : MonoBehaviour
     public event EventHandler OnStartingHost;
     public event EventHandler OnTryingToConnect;
     public event EventHandler OnClientDisconnected;
+    public event EventHandler OnPlayersDataListChanged;
+    public event EventHandler OnPlayerTryingToSelectTheSameColor;
+    public event EventHandler OnPlayerTryingToSelectColorSelectedByAnotherPlayer;
+
+    [SerializeField] private List<Color> playerColors;
+
+    private NetworkList<PlayerData> playersDataList;
 
     private int maxPlayers;
 
@@ -21,8 +28,13 @@ public class MultiplayerManager : MonoBehaviour
             return;
         }
         Instance = this;
-
+        playersDataList = new NetworkList<PlayerData>();
+        playersDataList.OnListChanged += PlayersDataList_OnListChanged;
         DontDestroyOnLoad(this);
+    }
+
+    private void PlayersDataList_OnListChanged(NetworkListEvent<PlayerData> changeEvent) {
+        OnPlayersDataListChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void StartHost(int maxPlayers = 4) {
@@ -33,8 +45,40 @@ public class MultiplayerManager : MonoBehaviour
         this.maxPlayers = maxPlayers;
         OnStartingHost?.Invoke(this, EventArgs.Empty);
         NetworkManager.Singleton.ConnectionApprovalCallback += NetworkManager_ConnectionApprovalCallbackMaxPlayersAndGameHasStarted;
+        NetworkManager.Singleton.OnClientConnectedCallback += NetworkManager_Server_OnClientConnectedCallback;
+        NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_Server_OnClientDisconnectCallback;
         NetworkManager.Singleton.StartHost();
         SceneLoader.LoadNetworkScene(SceneLoader.Scene.CharacterSelectionScene);
+    }
+
+    private void NetworkManager_Server_OnClientDisconnectCallback(ulong clientId) {
+        playersDataList.RemoveAt(GetPlayerIndexFromClientId(clientId));
+    }
+
+    private void NetworkManager_Server_OnClientConnectedCallback(ulong clientId) {
+        playersDataList.Add(new PlayerData() {
+            clientId = clientId,
+            colorIndex = GetFirstAvailableColorIndex()
+        });
+    }
+
+    private bool IsColorAvailable(int colorIndex) {
+        foreach (PlayerData playerData in playersDataList) {
+            if (playerData.colorIndex == colorIndex) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int GetFirstAvailableColorIndex() {
+        for (int colorIndex = 0; colorIndex < playerColors.Count; colorIndex++) {
+            if (IsColorAvailable(colorIndex)) {
+                return colorIndex;
+            }
+        }
+        Debug.LogError("There isn't any available colors!");
+        return -1;
     }
 
     private void NetworkManager_ConnectionApprovalCallbackMaxPlayersAndGameHasStarted(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response) {
@@ -68,6 +112,82 @@ public class MultiplayerManager : MonoBehaviour
         Destroy(NetworkManager.Singleton.gameObject);
         NetworkManager.Singleton.Shutdown();
         Destroy(gameObject);
+    }
+
+    public bool IsPlayerConnected(int playerIndex) {
+        return playerIndex < playersDataList.Count;
+    }
+
+    public PlayerData GetPlayerData(int playerIndex) {
+        if (IsPlayerConnected(playerIndex)) {
+            return playersDataList[playerIndex];
+        }
+        Debug.LogError("Tried to get player data of a player with an index outside of bounds!");
+        return default;
+    }
+
+    public Color GetColorByIndex(int colorIndex) {
+        // Always will be called with colorIndex inside the list
+        return playerColors[colorIndex];
+    }
+
+    public int GetPlayerIndexFromClientId(ulong clientId) {
+        for (int i = 0; i < playersDataList.Count; i++) {
+            if (playersDataList[i].clientId == clientId) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public ulong GetClientIdFromPlayerIndex(int playerIndex) {
+        if (IsPlayerConnected(playerIndex)) {
+            return playersDataList[playerIndex].clientId;
+        }
+        Debug.LogError("Tried to get player data of a player with an index outside of bounds!");
+        return default;
+    }
+
+    public PlayerData GetPlayerDataFromClientId(ulong clientId) {
+        return GetPlayerData(GetPlayerIndexFromClientId(clientId));
+    }
+
+    public int GetNumberOfColors() {
+        return playerColors.Count;
+    }
+
+    public PlayerData GetLocalPlayerData() {
+        return GetPlayerDataFromClientId(NetworkManager.Singleton.LocalClientId);
+    }
+
+    public void SetLocalPlayerColor(int colorIndex) {
+        if (GetLocalPlayerData().colorIndex == colorIndex) {
+            OnPlayerTryingToSelectTheSameColor?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+        SetPlayerColorServerRpc(colorIndex);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetPlayerColorServerRpc(int colorIndex, ServerRpcParams serverRpcParams = default) {
+        if (!IsColorAvailable(colorIndex)) {
+            ClientRpcParams clientRpcParams = new ClientRpcParams {
+                Send = new ClientRpcSendParams {
+                    TargetClientIds = new ulong[] { serverRpcParams.Receive.SenderClientId }
+                }
+            };
+            OnPlayerTryingToSelectColorSelectedByAnotherPlayerClientRpc(clientRpcParams);
+        } else {
+            int playerIndex = GetPlayerIndexFromClientId(serverRpcParams.Receive.SenderClientId);
+            PlayerData playerData = GetPlayerData(playerIndex);
+            playerData.colorIndex = colorIndex;
+            playersDataList[playerIndex] = playerData;
+        }
+    }
+
+    [ClientRpc]
+    private void OnPlayerTryingToSelectColorSelectedByAnotherPlayerClientRpc(ClientRpcParams clientRpcParams = default) {
+        OnPlayerTryingToSelectColorSelectedByAnotherPlayer?.Invoke(this, EventArgs.Empty);
     }
 
 }
