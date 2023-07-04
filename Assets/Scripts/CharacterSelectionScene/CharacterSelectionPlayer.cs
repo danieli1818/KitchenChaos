@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CharacterSelectionPlayer : MonoBehaviour
 {
@@ -9,10 +11,23 @@ public class CharacterSelectionPlayer : MonoBehaviour
     [SerializeField] private int playerIndex;
     [SerializeField] private PlayerVisual playerVisual;
     [SerializeField] private TextMeshPro readyText;
+    [SerializeField] private Button kickPlayerButton;
 
     private void Start() {
         PlayerReadyStatusManager.Instance.OnPlayerReadyChanged += PlayerReadyStatusManager_OnPlayerReadyChanged;
         MultiplayerManager.Instance.OnPlayersDataListChanged += MultiplayerManager_OnPlayersDataListChanged;
+
+        bool shouldAllowKickOption = NetworkManager.Singleton.IsServer && playerIndex != 0;
+        if (shouldAllowKickOption) {
+            kickPlayerButton.gameObject.SetActive(true);
+            kickPlayerButton.onClick.AddListener(() => {
+                Debug.Log("Yay detected clicking on the kick player button!");
+                MultiplayerManager.Instance.KickPlayer(MultiplayerManager.Instance.GetClientIdFromPlayerIndex(playerIndex));
+            });
+        } else {
+            kickPlayerButton.gameObject.SetActive(false);
+        }
+
         UpdatePlayer();
     }
 

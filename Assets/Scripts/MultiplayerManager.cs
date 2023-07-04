@@ -190,4 +190,10 @@ public class MultiplayerManager : NetworkBehaviour
         OnPlayerTryingToSelectColorSelectedByAnotherPlayer?.Invoke(this, EventArgs.Empty);
     }
 
+    // Server Side Function Only
+    public void KickPlayer(ulong clientId) {
+        NetworkManager.Singleton.DisconnectClient(clientId, "You have been kicked");
+        NetworkManager_Server_OnClientDisconnectCallback(clientId);
+    }
+
 }
