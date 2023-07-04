@@ -86,8 +86,4 @@ public class PlayerReadyStatusManager : NetworkBehaviour
         return playersReadyState.ContainsKey(clientId) && playersReadyState[clientId];
     }
 
-    public void SetPlayerColor(int colorIndex) {
-
-    }
-
 }

@@ -6,11 +6,6 @@ using UnityEngine;
 public class ColorSelectionBar : MonoBehaviour
 {
 
-    public event EventHandler OnColorSelected;
-    public class OnColorSelectedEventArgs : EventArgs {
-        public Color color;
-    }
-
     [SerializeField] private Transform colorSelectionButtonTemplateTransform;
 
     private void Start() {

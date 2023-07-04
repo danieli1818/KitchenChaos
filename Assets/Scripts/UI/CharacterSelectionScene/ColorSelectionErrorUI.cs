@@ -37,4 +37,9 @@ public class ColorSelectionErrorUI : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    private void OnDestroy() {
+        MultiplayerManager.Instance.OnPlayerTryingToSelectTheSameColor -= MultiplayerManager_OnPlayerTryingToSelectTheSameColor;
+        MultiplayerManager.Instance.OnPlayerTryingToSelectColorSelectedByAnotherPlayer -= MultiplayerManager_OnPlayerTryingToSelectColorSelectedByAnotherPlayer;
+    }
+
 }

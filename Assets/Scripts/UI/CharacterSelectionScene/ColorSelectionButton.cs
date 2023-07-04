@@ -58,4 +58,8 @@ public class ColorSelectionButton : MonoBehaviour
         selectedGameObject.SetActive(false);
     }
 
+    private void OnDestroy() {
+        MultiplayerManager.Instance.OnPlayersDataListChanged -= MultiplayerManager_OnPlayersDataListChanged;
+    }
+
 }
