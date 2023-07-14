@@ -24,7 +24,7 @@ public class PlayerReadyStatusManager : NetworkBehaviour
 
     private void Awake() {
         if (Instance != null) {
-            Debug.LogError("Trying to create anoter instance of the PlayerReadyStatusManager");
+            Debug.LogError("Trying to create another instance of the PlayerReadyStatusManager");
             return;
         }
         Instance = this;
@@ -33,7 +33,6 @@ public class PlayerReadyStatusManager : NetworkBehaviour
     }
 
     private void SetIsLocalPlayerReady(bool isReady) {
-        Debug.Log("IsPlayerReady: " + isPlayerReady + " isReady: " + isReady);
         if (isPlayerReady == isReady) {
             return;
         }
@@ -48,11 +47,9 @@ public class PlayerReadyStatusManager : NetworkBehaviour
     private void SetPlayerReadyServerRpc(bool isReady, ServerRpcParams serverRpcParams = default) {
         playersReadyState[serverRpcParams.Receive.SenderClientId] = isReady;
         OnPlayerReadyChangedClientRpc(serverRpcParams.Receive.SenderClientId, isReady);
-        Debug.Log("ClientId: " + serverRpcParams.Receive.SenderClientId + " is now " + (isReady ? "" : "not") + " ready!");
 
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds) {
             if (!playersReadyState.ContainsKey(clientId) || !playersReadyState[clientId]) {
-                Debug.Log("ClientId: " + clientId + " isn't ready!");
                 return;
             }
         }
@@ -69,12 +66,12 @@ public class PlayerReadyStatusManager : NetworkBehaviour
     }
 
     public bool TogglePlayerReadyState() {
-        Debug.Log("Toggling Player Ready State: " + !isPlayerReady);
         SetIsLocalPlayerReady(!isPlayerReady);
         return isPlayerReady;
     }
 
     private void StartGame() {
+        LobbyManager.Instance.DestroyLobby(LobbyManager.Instance.GetLobby().Id);
         SceneLoader.LoadNetworkScene(SceneLoader.Scene.GameScene);
     }
 

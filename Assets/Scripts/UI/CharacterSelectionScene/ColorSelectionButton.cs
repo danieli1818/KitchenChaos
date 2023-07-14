@@ -17,6 +17,7 @@ public class ColorSelectionButton : MonoBehaviour
             MultiplayerManager.Instance.SetLocalPlayerColor(colorIndex);
         });
         MultiplayerManager.Instance.OnPlayersDataListChanged += MultiplayerManager_OnPlayersDataListChanged;
+        UpdateColorSelectionButton();
     }
 
     private void MultiplayerManager_OnPlayersDataListChanged(object sender, System.EventArgs e) {
@@ -25,7 +26,7 @@ public class ColorSelectionButton : MonoBehaviour
 
     private void Start() {
         image.color = MultiplayerManager.Instance.GetColorByIndex(colorIndex);
-        UpdateColorSelectionButton();
+        // UpdateColorSelectionButton();
     }
 
     public void Select() {
@@ -42,6 +43,9 @@ public class ColorSelectionButton : MonoBehaviour
     }
 
     private void UpdateColorSelectionButton() {
+        if (MultiplayerManager.Instance.GetPlayerIndexFromClientId(NetworkManager.Singleton.LocalClientId) == -1) {
+            return; // Haven't updated players list yet
+        }
         PlayerData playerData = MultiplayerManager.Instance.GetPlayerDataFromClientId(NetworkManager.Singleton.LocalClientId);
         if (playerData.colorIndex == colorIndex) {
             ShowSelected();

@@ -2,11 +2,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
+using Unity.Services.Authentication;
 using UnityEngine;
 
 public class MultiplayerManager : NetworkBehaviour
 {
-    
+
+    private const string PLAYER_NAME_PLAYER_PREFS_ID = "PlayerName";
+
     public static MultiplayerManager Instance { get; private set; }
 
     public event EventHandler OnStartingHost;
@@ -20,6 +23,8 @@ public class MultiplayerManager : NetworkBehaviour
 
     private NetworkList<PlayerData> playersDataList;
 
+    private string playerName;
+
     private int maxPlayers;
 
     private void Awake() {
@@ -28,6 +33,7 @@ public class MultiplayerManager : NetworkBehaviour
             return;
         }
         Instance = this;
+        playerName = PlayerPrefs.GetString(PLAYER_NAME_PLAYER_PREFS_ID, "Player " + UnityEngine.Random.Range(1, 10000).ToString());
         playersDataList = new NetworkList<PlayerData>();
         playersDataList.OnListChanged += PlayersDataList_OnListChanged;
         DontDestroyOnLoad(this);
@@ -58,7 +64,9 @@ public class MultiplayerManager : NetworkBehaviour
     private void NetworkManager_Server_OnClientConnectedCallback(ulong clientId) {
         playersDataList.Add(new PlayerData() {
             clientId = clientId,
-            colorIndex = GetFirstAvailableColorIndex()
+            colorIndex = GetFirstAvailableColorIndex(),
+            playerId = AuthenticationService.Instance.PlayerId,
+            playerName = playerName
         });
     }
 
@@ -99,16 +107,48 @@ public class MultiplayerManager : NetworkBehaviour
     public void StartClient() {
         OnTryingToConnect?.Invoke(this, EventArgs.Empty);
 
-        NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnectCallback;
+        NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_Client_OnClientDisconnectCallback;
+        NetworkManager.Singleton.OnClientConnectedCallback += NetworkManager_Client_OnClientConnectedCallback;
         NetworkManager.Singleton.StartClient();
     }
 
-    private void NetworkManager_OnClientDisconnectCallback(ulong clientId) {
+    private void NetworkManager_Client_OnClientConnectedCallback(ulong clientId) {
+        SetPlayerNameServerRpc(playerName);
+        SetPlayerIdServerRpc(AuthenticationService.Instance.PlayerId);
+    }
+
+    public void SetLocalPlayerName(string playerName) {
+        this.playerName = playerName;
+
+        PlayerPrefs.SetString(PLAYER_NAME_PLAYER_PREFS_ID, playerName);
+        PlayerPrefs.Save();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetPlayerNameServerRpc(string playerName, ServerRpcParams serverRpcParams = default) {
+        int playerIndex = GetPlayerIndexFromClientId(serverRpcParams.Receive.SenderClientId);
+        PlayerData playerData = GetPlayerData(playerIndex);
+        playerData.playerName = playerName;
+        playersDataList[playerIndex] = playerData;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetPlayerIdServerRpc(string playerId, ServerRpcParams serverRpcParams = default) {
+        int playerIndex = GetPlayerIndexFromClientId(serverRpcParams.Receive.SenderClientId);
+        PlayerData playerData = GetPlayerData(playerIndex);
+        playerData.playerId = playerId;
+        playersDataList[playerIndex] = playerData;
+    }
+
+    private void NetworkManager_Client_OnClientDisconnectCallback(ulong clientId) {
         OnClientDisconnected?.Invoke(this, EventArgs.Empty);
     }
 
     public void ShutdownAndDestroyNetworkManager() {
         Debug.Log("Destroying Network Manager and Multiplayer Manager!");
+        if (LobbyManager.Instance != null) {
+            LobbyManager.Instance.DestroySelf();
+        }
         Destroy(NetworkManager.Singleton.gameObject);
         NetworkManager.Singleton.Shutdown();
         Destroy(gameObject);
@@ -192,8 +232,17 @@ public class MultiplayerManager : NetworkBehaviour
 
     // Server Side Function Only
     public void KickPlayer(ulong clientId) {
+        LobbyManager.Instance.KickPlayerFromLobby(GetPlayerDataFromClientId(clientId).playerId.ToString());
         NetworkManager.Singleton.DisconnectClient(clientId, "You have been kicked");
         NetworkManager_Server_OnClientDisconnectCallback(clientId);
+    }
+
+    public List<int> GetMaxPlayersOptions() {
+        return new List<int>() { 1, 2, 3, 4 };
+    }
+
+    public string GetLocalPlayerName() {
+        return playerName;
     }
 
 }

@@ -11,6 +11,7 @@ public class CharacterSelectionPlayer : MonoBehaviour
     [SerializeField] private int playerIndex;
     [SerializeField] private PlayerVisual playerVisual;
     [SerializeField] private TextMeshPro readyText;
+    [SerializeField] private TextMeshPro playerNameText;
     [SerializeField] private Button kickPlayerButton;
 
     private void Start() {
@@ -21,7 +22,6 @@ public class CharacterSelectionPlayer : MonoBehaviour
         if (shouldAllowKickOption) {
             kickPlayerButton.gameObject.SetActive(true);
             kickPlayerButton.onClick.AddListener(() => {
-                Debug.Log("Yay detected clicking on the kick player button!");
                 MultiplayerManager.Instance.KickPlayer(MultiplayerManager.Instance.GetClientIdFromPlayerIndex(playerIndex));
             });
         } else {
@@ -38,7 +38,6 @@ public class CharacterSelectionPlayer : MonoBehaviour
     }
 
     private void MultiplayerManager_OnPlayersDataListChanged(object sender, System.EventArgs e) {
-        Debug.Log("Updating player since players data list changed!");
         UpdatePlayer();
     }
 
@@ -50,6 +49,7 @@ public class CharacterSelectionPlayer : MonoBehaviour
             PlayerData playerData = MultiplayerManager.Instance.GetPlayerData(playerIndex);
             playerVisual.SetPlayerColor(MultiplayerManager.Instance.GetColorByIndex(playerData.colorIndex));
             readyText.gameObject.SetActive(PlayerReadyStatusManager.Instance.IsPlayerReady(playerData.clientId));
+            playerNameText.text = playerData.playerName.ToString();
         }
     }
 
