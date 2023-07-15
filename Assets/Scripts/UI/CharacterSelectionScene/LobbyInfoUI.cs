@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
 public class LobbyInfoUI : MonoBehaviour
@@ -10,8 +11,14 @@ public class LobbyInfoUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI lobbyCodeText;
 
     private void Start() {
-        lobbyNameText.text = LobbyManager.Instance.GetLobby().Name;
-        lobbyCodeText.text = LobbyManager.Instance.GetLobby().LobbyCode;
+        Lobby lobby = LobbyManager.Instance.GetLobby();
+        if (lobby != null) {
+            lobbyNameText.text = LobbyManager.Instance.GetLobby().Name;
+            lobbyCodeText.text = LobbyManager.Instance.GetLobby().LobbyCode;
+        } else {
+            lobbyNameText.text = "";
+            lobbyCodeText.text = "";
+        }
     }
 
 }

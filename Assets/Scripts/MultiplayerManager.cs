@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using Unity.Services.Authentication;
 using UnityEngine;
 
@@ -11,6 +12,8 @@ public class MultiplayerManager : NetworkBehaviour
     private const string PLAYER_NAME_PLAYER_PREFS_ID = "PlayerName";
 
     public static MultiplayerManager Instance { get; private set; }
+
+    public static bool IsMultiplayer { get; set; } = true;
 
     public event EventHandler OnStartingHost;
     public event EventHandler OnTryingToConnect;
@@ -37,6 +40,13 @@ public class MultiplayerManager : NetworkBehaviour
         playersDataList = new NetworkList<PlayerData>();
         playersDataList.OnListChanged += PlayersDataList_OnListChanged;
         DontDestroyOnLoad(this);
+    }
+
+    private void Start() {
+        if (!IsMultiplayer) {
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetConnectionData("127.0.0.1", 7777);
+            StartHost(1);
+        }
     }
 
     private void PlayersDataList_OnListChanged(NetworkListEvent<PlayerData> changeEvent) {

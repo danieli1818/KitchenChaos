@@ -71,7 +71,9 @@ public class PlayerReadyStatusManager : NetworkBehaviour
     }
 
     private void StartGame() {
-        LobbyManager.Instance.DestroyLobby(LobbyManager.Instance.GetLobby().Id);
+        if (LobbyManager.Instance.GetLobby() != null) {
+            LobbyManager.Instance.DestroyLobby(LobbyManager.Instance.GetLobby().Id);
+        }
         SceneLoader.LoadNetworkScene(SceneLoader.Scene.GameScene);
     }
 
