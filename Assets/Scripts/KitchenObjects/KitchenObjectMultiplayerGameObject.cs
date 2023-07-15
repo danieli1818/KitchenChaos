@@ -25,15 +25,20 @@ public class KitchenObjectMultiplayerGameObject : NetworkBehaviour
     private void SpawnKitchenObjectServerRpc(int kitchenObjectSOIndex, NetworkObjectReference kitchenObjectHolderNetworkObjectReference) {
         Transform kitchenObjectTransform = Instantiate(GetKitchenObjectSO(kitchenObjectSOIndex).GetPrefab());
 
+        if (!kitchenObjectHolderNetworkObjectReference.TryGet(out NetworkObject kitchenObjectHolderNetworkObject)) {
+            Debug.LogError("Couldn't get Kitchen Object Holder's Network Object from Reference!");
+        }
+        IKitchenObjectHolder kitchenObjectHolder = kitchenObjectHolderNetworkObject.GetComponent<IKitchenObjectHolder>();
+
+        if (kitchenObjectHolder == null || kitchenObjectHolder.HasHeldKitchenObject()) {
+            return; // Spawn Lag
+        }
+
         NetworkObject kitchenObjectNetworkObject = kitchenObjectTransform.GetComponent<NetworkObject>();
         kitchenObjectNetworkObject.Spawn(true);
 
         KitchenObject kitchenObject = kitchenObjectTransform.GetComponent<KitchenObject>();
 
-        if (!kitchenObjectHolderNetworkObjectReference.TryGet(out NetworkObject kitchenObjectHolderNetworkObject)) {
-            Debug.LogError("Couldn't get Kitchen Object Holder's Network Object from Reference!");
-        }
-        IKitchenObjectHolder kitchenObjectHolder = kitchenObjectHolderNetworkObject.GetComponent<IKitchenObjectHolder>();
         Debug.Log("In Spawn, Kitchen Object Holder: " + kitchenObjectHolder + " and its Network Object: " + kitchenObjectHolder.GetNetworkObject());
         kitchenObject.SetKitchenObjectHolder(kitchenObjectHolder);
     }
@@ -47,6 +52,9 @@ public class KitchenObjectMultiplayerGameObject : NetworkBehaviour
         ClearKitchenObjectFromHolderClientRpc(kitchenObjectNetworkObjectReference);
         if (!kitchenObjectNetworkObjectReference.TryGet(out NetworkObject kitchenObjectNetworkObject)) {
             Debug.Log("Couldn't get the Kitchen Object's Network Object from its reference!");
+        }
+        if (kitchenObjectNetworkObject == null) {
+            return; // Kitchen Object has already been destroyed
         }
         kitchenObjectNetworkObject.Despawn();
     }

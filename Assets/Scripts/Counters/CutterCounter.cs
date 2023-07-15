@@ -74,8 +74,10 @@ public class CutterCounter : BaseCounter, IHasProgress
 
     [ServerRpc(RequireOwnership = false)]
     private void InteractAlternateLogicServerRpc() {
-        CutObjectClientRpc();
-        CheckCutDone();
+        if (HasHeldKitchenObject() && recipes.HasRecipe(GetKitchenObject().GetKitchenObjectSO())) { // Else the player already cut and has lags
+            CutObjectClientRpc();
+            CheckCutDone();
+        }
     }
 
     [ClientRpc]
