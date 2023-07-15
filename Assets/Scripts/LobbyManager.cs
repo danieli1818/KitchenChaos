@@ -1,16 +1,25 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
+using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class LobbyManager : MonoBehaviour
 {
-    
+
+    private const string LOBBY_DATA_RELAY_ALLOCATION_JOIN_CODE = "RelayAllocationJoinCode";
+    private const string RELAY_UNITY_TRANSPORT_PROTOCOL = "dtls";
+
     public static LobbyManager Instance { get; private set; }
 
     public event EventHandler<OnLobbyListUpdatedEventArgs> OnLobbyListUpdated;
@@ -91,8 +100,8 @@ public class LobbyManager : MonoBehaviour
         try {
             Debug.Log("Uninitialized state: " + (UnityServices.State == ServicesInitializationState.Uninitialized).ToString());
             if (UnityServices.State == ServicesInitializationState.Uninitialized) {
-                InitializationOptions initializationOptions = new InitializationOptions(); // Remove if publishing
-                initializationOptions.SetProfile(UnityEngine.Random.Range(0, 1000).ToString());
+                InitializationOptions initializationOptions = new InitializationOptions();
+                // initializationOptions.SetProfile(UnityEngine.Random.Range(0, 1000).ToString()); // Enable for testing locally with multiple instances
                 await UnityServices.InitializeAsync(initializationOptions);
             }
             Debug.Log("IsAuthorized: " + AuthenticationService.Instance.IsAuthorized.ToString());
@@ -104,6 +113,33 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
+    private async Task<Allocation> AllocateRelay(int maxPlayers) {
+        try {
+            return await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1);
+        } catch (RelayServiceException exception) {
+            Debug.LogError(exception);
+            return default;
+        }
+    }
+
+    private async Task<string> GetRelayCode(Allocation relayAllocation) {
+        try {
+            return await RelayService.Instance.GetJoinCodeAsync(relayAllocation.AllocationId);
+        } catch (RelayServiceException exception) {
+            Debug.LogError(exception);
+            return default;
+        }
+    }
+
+    private async Task<JoinAllocation> JoinRelay(string relayCode) {
+        try {
+            return await RelayService.Instance.JoinAllocationAsync(relayCode);
+        } catch (RelayServiceException exception) {
+            Debug.LogError(exception);
+            return default;
+        }
+    }
+
     public async void CreateLobby(string lobbyName, int maxPlayers, bool isPrivate = false) {
         try {
             CreateLobbyOptions createLobbyOptions = new() {
@@ -111,6 +147,20 @@ public class LobbyManager : MonoBehaviour
             };
             OnTryingCreateLobby?.Invoke(this, EventArgs.Empty);
             joinedLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, createLobbyOptions);
+
+            Allocation relayAllocation = await AllocateRelay(joinedLobby.MaxPlayers);
+            string relayCode = await GetRelayCode(relayAllocation);
+            try {
+                await LobbyService.Instance.UpdateLobbyAsync(joinedLobby.Id, new UpdateLobbyOptions() {
+                    Data = new Dictionary<string, DataObject>() {
+                    { LOBBY_DATA_RELAY_ALLOCATION_JOIN_CODE, new DataObject(DataObject.VisibilityOptions.Member, relayCode) }
+                }
+                });
+                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(relayAllocation, RELAY_UNITY_TRANSPORT_PROTOCOL));
+            } catch (RelayServiceException exception) {
+                Debug.LogError(exception);
+            }
+
             MultiplayerManager.Instance.StartHost();
         } catch (LobbyServiceException exception) {
             Debug.LogError(exception);
@@ -122,6 +172,8 @@ public class LobbyManager : MonoBehaviour
         try {
             OnTryingJoinLobby?.Invoke(this, EventArgs.Empty);
             joinedLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(lobbyCode);
+            JoinAllocation relayAllocation = await JoinRelay(joinedLobby.Data[LOBBY_DATA_RELAY_ALLOCATION_JOIN_CODE].Value);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(relayAllocation, RELAY_UNITY_TRANSPORT_PROTOCOL));
             MultiplayerManager.Instance.StartClient();
         } catch (LobbyServiceException exception) {
             Debug.LogError(exception);
@@ -133,6 +185,8 @@ public class LobbyManager : MonoBehaviour
         try {
             OnTryingJoinLobby?.Invoke(this, EventArgs.Empty);
             joinedLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
+            JoinAllocation relayAllocation = await JoinRelay(joinedLobby.Data[LOBBY_DATA_RELAY_ALLOCATION_JOIN_CODE].Value);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(relayAllocation, RELAY_UNITY_TRANSPORT_PROTOCOL));
             MultiplayerManager.Instance.StartClient();
         } catch (LobbyServiceException exception) {
             Debug.LogError(exception);
@@ -144,7 +198,8 @@ public class LobbyManager : MonoBehaviour
         try {
             OnTryingQuickJoinLobby?.Invoke(this, EventArgs.Empty);
             joinedLobby = await LobbyService.Instance.QuickJoinLobbyAsync();
-            Debug.Log(joinedLobby.ToString());
+            JoinAllocation relayAllocation = await JoinRelay(joinedLobby.Data[LOBBY_DATA_RELAY_ALLOCATION_JOIN_CODE].Value);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(relayAllocation, RELAY_UNITY_TRANSPORT_PROTOCOL));
             MultiplayerManager.Instance.StartClient();
         } catch (LobbyServiceException exception) {
             Debug.LogError(exception);
