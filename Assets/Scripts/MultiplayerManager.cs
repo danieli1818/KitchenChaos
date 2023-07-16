@@ -248,7 +248,7 @@ public class MultiplayerManager : NetworkBehaviour
     }
 
     public List<int> GetMaxPlayersOptions() {
-        return new List<int>() { 1, 2, 3, 4 };
+        return new List<int>() { 2, 3, 4 };
     }
 
     public string GetLocalPlayerName() {

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -6,6 +7,8 @@ using UnityEngine.UI;
 
 public class CreatingLobbyUI : MonoBehaviour
 {
+
+    public event EventHandler OnCloseUI;
 
     [SerializeField] private Button mainMenuButton;
     [SerializeField] private Button closeButton;
@@ -33,7 +36,7 @@ public class CreatingLobbyUI : MonoBehaviour
     private void CreateLobby() {
         string lobbyName = lobbyNameInputField.text;
         if (lobbyName == "") {
-            lobbyName = "Lobby " + Random.Range(1, 10000).ToString();
+            lobbyName = "Lobby " + UnityEngine.Random.Range(1, 10000).ToString();
         }
         bool isPrivate = isPrivateCheckboxButton.IsChecked;
         if (!int.TryParse(maxPlayersDropdown.captionText.text, out int maxPlayers)) {
@@ -45,10 +48,13 @@ public class CreatingLobbyUI : MonoBehaviour
 
     public void Show() {
         gameObject.SetActive(true);
+
+        createLobbyButton.Select();
     }
 
     private void Hide() {
         gameObject.SetActive(false);
+        OnCloseUI?.Invoke(this, EventArgs.Empty);
     }
 
 }

@@ -54,6 +54,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   button: {fileID: 1832910441748298497}
   checkedGameObject: {fileID: 1832910441854054006}
+  backgroundImage: {fileID: 1832910440688288366}
+  selectedColor: {r: 0.19215687, g: 1, b: 0, a: 1}
+  notSelectedColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &1832910440688288354
 GameObject:
   m_ObjectHideFlags: 0

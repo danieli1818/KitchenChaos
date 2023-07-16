@@ -13,8 +13,11 @@ public class ReadyUI : MonoBehaviour
     [SerializeField] private Color readyButtonColor;
     [SerializeField] private Color notReadyButtonColor;
 
+    [SerializeField] private ColorSelectionErrorUI colorSelectionErrorUI;
+
     private void Start() {
         PlayerReadyStatusManager.Instance.OnLocalPlayerReadyChanged += PlayerReadyStatusManager_OnLocalPlayerReadyChanged;
+        colorSelectionErrorUI.OnCloseUI += ColorSelectionErrorUI_OnCloseUI;
         mainMenuButton.onClick.AddListener(() => {
             MultiplayerManager.Instance.ShutdownAndDestroyNetworkManager();
             SceneLoader.LoadScene(SceneLoader.Scene.MainMenuScene);
@@ -27,6 +30,10 @@ public class ReadyUI : MonoBehaviour
         } else {
             SetNotReadyButton();
         }
+    }
+
+    private void ColorSelectionErrorUI_OnCloseUI(object sender, System.EventArgs e) {
+        throw new System.NotImplementedException();
     }
 
     private void PlayerReadyStatusManager_OnLocalPlayerReadyChanged(object sender, PlayerReadyStatusManager.OnLocalPlayerReadyChangedEventArgs e) {

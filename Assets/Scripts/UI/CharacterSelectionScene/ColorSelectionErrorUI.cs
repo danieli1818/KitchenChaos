@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -6,6 +7,8 @@ using UnityEngine.UI;
 
 public class ColorSelectionErrorUI : MonoBehaviour
 {
+
+    public event EventHandler OnCloseUI;
 
     [SerializeField] private TextMeshProUGUI errorMessageText;
     [SerializeField] private Button closeButton;
@@ -31,10 +34,14 @@ public class ColorSelectionErrorUI : MonoBehaviour
 
     private void Show() {
         gameObject.SetActive(true);
+
+        closeButton.Select();
     }
 
     private void Hide() {
         gameObject.SetActive(false);
+
+        OnCloseUI?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnDestroy() {

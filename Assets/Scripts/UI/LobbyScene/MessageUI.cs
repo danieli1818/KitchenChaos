@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -7,6 +8,8 @@ using UnityEngine.UI;
 
 public class MessageUI : MonoBehaviour
 {
+
+    public event EventHandler OnCloseUI;
 
     [SerializeField] private TextMeshProUGUI messageText;
     [SerializeField] private Button closeButton;
@@ -84,10 +87,14 @@ public class MessageUI : MonoBehaviour
 
     private void Show() {
         gameObject.SetActive(true);
+
+        closeButton.Select();
     }
 
     private void Hide() {
         gameObject.SetActive(false);
+
+        OnCloseUI?.Invoke(this, EventArgs.Empty);
     }
 
     private void ShowCloseButton() {
